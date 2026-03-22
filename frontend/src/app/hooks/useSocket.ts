@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAlertsStore } from "../store/alertsStore";
 
-const BACKEND_URL = "${import.meta.env.VITE_API_URL}";
+const BACKEND_URL = (import.meta as any).env?.VITE_API_URL ?? "https://netraith-backend.onrender.com";
 
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
