@@ -28,6 +28,7 @@ from routes.firewall_routes import firewall_bp
 from routes.predict_routes  import predict_bp
 from routes.report_routes   import report_bp
 from services.suricata_watcher import SuricataWatcher
+from routes.ingest_routes import ingest_bp
 
 app.register_blueprint(alerts_bp,      url_prefix="/api/alerts")
 app.register_blueprint(simulate_bp,    url_prefix="/api/simulate")
@@ -37,6 +38,7 @@ app.register_blueprint(ai_explain_bp,  url_prefix="/api/ai")
 app.register_blueprint(firewall_bp,    url_prefix="/api/firewall")
 app.register_blueprint(predict_bp,     url_prefix="/api/predict")
 app.register_blueprint(report_bp,      url_prefix="/api/report")
+app.register_blueprint(ingest_bp, url_prefix="/api/alerts")
 
 watcher = SuricataWatcher(socketio)
 def start_watcher(): watcher.start()
