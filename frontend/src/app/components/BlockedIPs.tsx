@@ -26,8 +26,8 @@ export function BlockedIPsPanel({ onClose }: Props) {
   async function load() {
     try {
       const [b, s] = await Promise.all([
-        fetch('http://localhost:5000/api/firewall/blocked').then(r => r.json()),
-        fetch('http://localhost:5000/api/firewall/stats').then(r => r.json()),
+        fetch('${import.meta.env.VITE_API_URL}/api/firewall/blocked').then(r => r.json()),
+        fetch('${import.meta.env.VITE_API_URL}/api/firewall/stats').then(r => r.json()),
       ]);
       setBlocked(b);
       setStats(s);
@@ -39,7 +39,7 @@ export function BlockedIPsPanel({ onClose }: Props) {
   async function unblock(ip: string) {
     setUnblocking(ip);
     try {
-      await fetch('http://localhost:5000/api/firewall/unblock', {
+      await fetch('${import.meta.env.VITE_API_URL}/api/firewall/unblock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ip }),
@@ -52,7 +52,7 @@ export function BlockedIPsPanel({ onClose }: Props) {
   async function manualBlock() {
     if (!manualIP.trim()) return;
     try {
-      await fetch('http://localhost:5000/api/firewall/block', {
+      await fetch('${import.meta.env.VITE_API_URL}/api/firewall/block', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ip: manualIP.trim(), reason: 'Manual block', severity: 'high', signature: 'Manually blocked by operator' }),

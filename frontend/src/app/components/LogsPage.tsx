@@ -87,7 +87,7 @@ export function LogsPage() {
               { label: 'EXPORT JSON', action: exportJSON, color: CYAN   },
               { label: 'EXPORT CSV',  action: exportCSV,  color: '#00D4C8' },
               { label: 'CLEAR LOGS', action: clearAlerts, color: RED    },
-            { label: '📄 PDF REPORT', action: () => window.open('http://localhost:5000/api/report/generate', '_blank'), color: '#AA88FF' },
+            { label: '📄 PDF REPORT', action: () => window.open('${import.meta.env.VITE_API_URL}/api/report/generate', '_blank'), color: '#AA88FF' },
             ].map(btn => (
               <button key={btn.label} onClick={btn.action} style={{ padding: '5px 12px', background: 'rgba(0,12,25,0.8)', border: `1px solid ${btn.color}40`, color: btn.color, fontFamily: monoFont, fontSize: 8, letterSpacing: '0.15em', cursor: 'pointer', borderRadius: 1, transition: 'all 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = `${btn.color}15`)}

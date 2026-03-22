@@ -78,7 +78,7 @@ $env:SURICATA_LOG_PATH="\\wsl$\Ubuntu\var\log\suricata\eve.json"
 cd backend
 python app.py
 🌐 Access
-Backend → http://localhost:5000
+Backend → ${import.meta.env.VITE_API_URL}
 Frontend → http://localhost:5173
 ⚡ Without Suricata (Demo Mode)
 
