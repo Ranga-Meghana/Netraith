@@ -72,7 +72,7 @@ export function ThreatForecast() {
     setLoading(true);
     setError('');
     try {
-      const res  = await fetch('${import.meta.env.VITE_API_URL}/api/predict/');
+      const res = await fetch(`${(import.meta as any).env?.VITE_API_URL ?? 'https://netraith-backend.onrender.com'}/api/predict/`);
       const json = await res.json();
       setData(json);
       setLastRefresh(new Date());
