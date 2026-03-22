@@ -1,0 +1,15 @@
+flask==3.1.0
+flask-cors==5.0.0
+flask-socketio==5.5.1
+python-socketio==5.12.1
+python-engineio==4.12.1
+eventlet==0.37.0
+
+# Optional: for AI-powered summaries
+openai==1.30.1
+
+# Dev / testing
+pytest==8.2.0
+
+# REQUIRED for deployment
+gunicorn==21.2.0

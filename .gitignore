@@ -1,0 +1,38 @@
+# =========================
+# FRONTEND (React/Vite)
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# =========================
+# BACKEND (Python)
+# =========================
+venv/
+backend/__pycache__/
+backend/**/*.pyc
+*.pyc
+
+# =========================
+# ENV FILES (IMPORTANT)
+# =========================
+.env
+frontend/.env
+backend/.env
+
+# =========================
+# DATABASE FILES
+# =========================
+*.db
+
+# =========================
+# SYSTEM FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE FILES
+# =========================
+.vscode/
