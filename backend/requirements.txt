@@ -5,6 +5,7 @@ python-socketio==5.12.1
 python-engineio==4.12.1
 gevent==24.2.1
 gevent-websocket==0.10.1
+reportlab==4.2.2
 
 # Optional: for AI-powered summaries
 openai==1.30.1
