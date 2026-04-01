@@ -26,7 +26,6 @@ function ipToGeo(ip: string): { lat: number; lon: number; country: string } {
 
 const DEST = { lat: 17.4, lon: 78.5 };
 
-// Attack color per country name
 const ATTACK_COLORS: Record<string, string> = {};
 
 interface AttackArc {
@@ -38,8 +37,8 @@ interface AttackArc {
 interface CountryFeature {
   id: string;
   name: string;
-  paths: [number,number][][]; // screen coords
-  rawPaths: [number,number][][]; // lon/lat
+  paths: [number,number][][];
+  rawPaths: [number,number][][];
 }
 
 export function ThreatMap() {
@@ -71,22 +70,52 @@ export function ThreatMap() {
     if (liveAlerts.length <= processedRef.current) return;
     const newOnes = liveAlerts.slice(0, liveAlerts.length - processedRef.current);
     processedRef.current = liveAlerts.length;
+
     newOnes.forEach(alert => {
-      const geo   = ipToGeo(alert.srcIp);
+      // ✅ FIX: Use geoip from alert if available, fallback to ipToGeo
+      const srcIp = alert.srcIp || alert.src_ip || '';
+      let geo: { lat: number; lon: number; country: string };
+
+      if (alert.geoip && alert.geoip.lat && alert.geoip.lon && alert.geoip.country) {
+        geo = {
+          lat: alert.geoip.lat,
+          lon: alert.geoip.lon,
+          country: alert.geoip.country,
+        };
+      } else {
+        geo = ipToGeo(srcIp);
+      }
+
       const color = alert.severity === 'critical' ? RED : alert.severity === 'high' ? ORANGE : '#FFD700';
       ATTACK_COLORS[geo.country] = color;
       attackedRef.current.add(geo.country);
+
       arcsRef.current = [{
-        id: alert.id, fromLat: geo.lat, fromLon: geo.lon,
-        country: geo.country, ip: alert.srcIp, type: alert.signature,
-        severity: alert.severity, progress: 0,
-        speed: 0.004 + Math.random() * 0.006, color,
+        id: alert.id,
+        fromLat: geo.lat,
+        fromLon: geo.lon,
+        country: geo.country,
+        ip: srcIp,
+        type: alert.signature || alert.type || 'Unknown',
+        severity: alert.severity,
+        progress: 0,
+        speed: 0.004 + Math.random() * 0.006,
+        color,
       }, ...arcsRef.current].slice(0, 30);
+
       setRecentAttacks(prev => [{
-        id: alert.id, fromLat: geo.lat, fromLon: geo.lon,
-        country: geo.country, ip: alert.srcIp, type: alert.signature,
-        severity: alert.severity, progress: 0, speed: 0.004, color,
+        id: alert.id,
+        fromLat: geo.lat,
+        fromLon: geo.lon,
+        country: geo.country,
+        ip: srcIp,
+        type: alert.signature || alert.type || 'Unknown',
+        severity: alert.severity,
+        progress: 0,
+        speed: 0.004,
+        color,
       }, ...prev].slice(0, 8));
+
       setStats(prev => ({
         total: prev.total + 1,
         critical: prev.critical + (alert.severity === 'critical' ? 1 : 0),
@@ -117,7 +146,6 @@ export function ThreatMap() {
       return { x, y };
     }
 
-    // Country name lookup by numeric ID (ISO 3166-1 numeric)
     const ID_TO_NAME: Record<string, string> = {
       '004':'Afghanistan','008':'Albania','012':'Algeria','024':'Angola','032':'Argentina',
       '036':'Australia','040':'Austria','050':'Bangladesh','056':'Belgium','068':'Bolivia',
@@ -238,11 +266,9 @@ export function ThreatMap() {
 
       ctx.clearRect(0, 0, W, H);
 
-      // Background
       ctx.fillStyle = '#050d1a';
       ctx.fillRect(0, 0, W, H);
 
-      // Grid
       ctx.strokeStyle = 'rgba(0,180,140,0.07)';
       ctx.lineWidth   = 0.5;
       for (let lon = -180; lon <= 180; lon += 20) {
@@ -260,7 +286,6 @@ export function ThreatMap() {
         ctx.stroke();
       }
 
-      // Draw countries
       countriesRef.current.forEach(feature => {
         const isHovered  = hoveredRef.current === feature.name;
         const isAttacked = attackedRef.current.has(feature.name);
@@ -274,7 +299,6 @@ export function ThreatMap() {
           ctx.closePath();
 
           if (isHovered) {
-            // Glowing hover — teal like Radware
             ctx.fillStyle   = 'rgba(0,200,160,0.55)';
             ctx.shadowBlur  = 20;
             ctx.shadowColor = '#00FFD4';
@@ -284,7 +308,6 @@ export function ThreatMap() {
             ctx.lineWidth   = 1.2;
             ctx.stroke();
           } else if (isAttacked) {
-            // Attacked countries glow in their attack color
             const r = atkColor === RED    ? '200,50,50'
                     : atkColor === ORANGE ? '180,80,0'
                     : '140,100,0';
@@ -297,7 +320,6 @@ export function ThreatMap() {
             ctx.lineWidth   = 0.8;
             ctx.stroke();
           } else {
-            // Default country
             ctx.fillStyle   = 'rgba(0,55,45,0.6)';
             ctx.fill();
             ctx.strokeStyle = 'rgba(0,200,160,0.4)';
@@ -307,7 +329,6 @@ export function ThreatMap() {
         });
       });
 
-      // Hover tooltip
       if (hoveredRef.current) {
         const mx = mouseRef.current.x;
         const my = mouseRef.current.y;
@@ -334,7 +355,6 @@ export function ThreatMap() {
         ctx.restore();
       }
 
-      // Attack arcs
       arcsRef.current.forEach(arc => {
         arc.progress = Math.min(1, arc.progress + arc.speed);
         const steps  = 100;
@@ -368,7 +388,6 @@ export function ThreatMap() {
         ctx.stroke();
         ctx.shadowBlur  = 0;
 
-        // Tip
         const tf = arc.progress;
         const tx = (1-tf)*(1-tf)*fromP.x + 2*(1-tf)*tf*cpX + tf*tf*toP.x;
         const ty = (1-tf)*(1-tf)*fromP.y + 2*(1-tf)*tf*cpY + tf*tf*toP.y;
@@ -380,7 +399,6 @@ export function ThreatMap() {
         ctx.fill();
         ctx.shadowBlur  = 0;
 
-        // Source dot
         ctx.beginPath();
         ctx.arc(fromP.x, fromP.y, 3, 0, Math.PI * 2);
         ctx.fillStyle   = arc.color;
@@ -392,7 +410,6 @@ export function ThreatMap() {
 
       arcsRef.current = arcsRef.current.filter(a => a.progress < 1.2);
 
-      // YOU marker
       const dp    = project(DEST.lon, DEST.lat, W, H);
       const pulse = 0.5 + 0.5 * Math.sin(t * 4);
       for (let ring = 1; ring <= 3; ring++) {
