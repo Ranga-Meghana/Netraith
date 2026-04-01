@@ -11,7 +11,7 @@ from config import Config
 app = Flask(__name__)
 app.config.from_object(Config)
 CORS(app, resources={r"/api/*": {"origins": Config.ALLOWED_ORIGINS}})
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 app.extensions["socketio"] = socketio
 
 from database        import init_db
