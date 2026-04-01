@@ -15,7 +15,6 @@ export function useSocket() {
   const { addAlert, setConnected, setConnectionError } = useAlertsStore();
 
   useEffect(() => {
-    // Always create a fresh socket — never reuse a stale singleton
     const socket = io(BACKEND_URL, {
       transports: ["websocket", "polling"],
       reconnectionAttempts: 10,
@@ -55,7 +54,7 @@ export function useSocket() {
       socket.off("connect_error");
       socket.off("new_alert");
       socket.off("alerts_batch");
-      socket.disconnect(); // fully close, don't reuse
+      socket.disconnect();
     };
   }, [addAlert, setConnected, setConnectionError]);
 
@@ -75,14 +74,11 @@ export interface Alert {
   srcPort: number | null;
   destPort: number | null;
   proto: string;
+  geoip?: { lat: number; lon: number; country: string }; // ✅ added
 }
 
 /**
  * Normalizes raw alert from simulator.py / suricata_watcher.py
- *
- * Both send flat shape:
- *   { id, timestamp, severity, src_ip, src_port, dest_ip, dest_port,
- *     proto, signature, category, action, geoip }
  */
 function normalizeAlert(raw: any): Alert {
   const severity = raw.severity ?? "medium";
@@ -100,5 +96,6 @@ function normalizeAlert(raw: any): Alert {
     srcPort:   raw.src_port ?? null,
     destPort:  raw.dest_port ?? null,
     proto:     raw.proto ?? "TCP",
+    geoip:     raw.geoip ?? null, // ✅ added
   };
 }
