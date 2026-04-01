@@ -72,10 +72,8 @@ export function ThreatMap() {
     processedRef.current = liveAlerts.length;
 
     newOnes.forEach(alert => {
-      // ✅ FIX: Use geoip from alert if available, fallback to ipToGeo
-      const srcIp = alert.srcIp || alert.src_ip || '';
+      // ✅ Use geoip from alert if available, fallback to ipToGeo
       let geo: { lat: number; lon: number; country: string };
-
       if (alert.geoip && alert.geoip.lat && alert.geoip.lon && alert.geoip.country) {
         geo = {
           lat: alert.geoip.lat,
@@ -83,7 +81,7 @@ export function ThreatMap() {
           country: alert.geoip.country,
         };
       } else {
-        geo = ipToGeo(srcIp);
+        geo = ipToGeo(alert.srcIp);
       }
 
       const color = alert.severity === 'critical' ? RED : alert.severity === 'high' ? ORANGE : '#FFD700';
@@ -91,34 +89,34 @@ export function ThreatMap() {
       attackedRef.current.add(geo.country);
 
       arcsRef.current = [{
-        id: alert.id,
-        fromLat: geo.lat,
-        fromLon: geo.lon,
-        country: geo.country,
-        ip: srcIp,
-        type: alert.signature || alert.type || 'Unknown',
+        id:       alert.id,
+        fromLat:  geo.lat,
+        fromLon:  geo.lon,
+        country:  geo.country,
+        ip:       alert.srcIp,
+        type:     alert.signature || 'Unknown',  // ✅ use signature not type
         severity: alert.severity,
         progress: 0,
-        speed: 0.004 + Math.random() * 0.006,
+        speed:    0.004 + Math.random() * 0.006,
         color,
       }, ...arcsRef.current].slice(0, 30);
 
       setRecentAttacks(prev => [{
-        id: alert.id,
-        fromLat: geo.lat,
-        fromLon: geo.lon,
-        country: geo.country,
-        ip: srcIp,
-        type: alert.signature || alert.type || 'Unknown',
+        id:       alert.id,
+        fromLat:  geo.lat,
+        fromLon:  geo.lon,
+        country:  geo.country,
+        ip:       alert.srcIp,
+        type:     alert.signature || 'Unknown',  // ✅ use signature not type
         severity: alert.severity,
         progress: 0,
-        speed: 0.004,
+        speed:    0.004,
         color,
       }, ...prev].slice(0, 8));
 
       setStats(prev => ({
-        total: prev.total + 1,
-        critical: prev.critical + (alert.severity === 'critical' ? 1 : 0),
+        total:     prev.total + 1,
+        critical:  prev.critical + (alert.severity === 'critical' ? 1 : 0),
         countries: new Set([...prev.countries, geo.country]),
       }));
     });
@@ -138,11 +136,11 @@ export function ThreatMap() {
     }
 
     function project(lon: number, lat: number, W: number, H: number) {
-      const x   = ((lon + 180) / 360) * W;
-      const cl  = Math.max(-85, Math.min(85, lat));
-      const lr  = (cl * Math.PI) / 180;
-      const mn  = Math.log(Math.tan(Math.PI / 4 + lr / 2));
-      const y   = (H / 2) - (W * mn) / (2 * Math.PI);
+      const x  = ((lon + 180) / 360) * W;
+      const cl = Math.max(-85, Math.min(85, lat));
+      const lr = (cl * Math.PI) / 180;
+      const mn = Math.log(Math.tan(Math.PI / 4 + lr / 2));
+      const y  = (H / 2) - (W * mn) / (2 * Math.PI);
       return { x, y };
     }
 
@@ -172,9 +170,9 @@ export function ThreatMap() {
 
     function buildCountries(W: number, H: number) {
       if (!geoDataRef.current) return;
-      const topo = geoDataRef.current;
+      const topo      = geoDataRef.current;
       const transform = topo.transform;
-      const scale = transform?.scale || [1, 1];
+      const scale     = transform?.scale     || [1, 1];
       const translate = transform?.translate || [0, 0];
 
       const decodedArcs = topo.arcs.map((arc: number[][]) => {
@@ -196,15 +194,15 @@ export function ThreatMap() {
         const collectRing = (arcIndices: number[]) => {
           const pts: [number,number][] = [];
           arcIndices.forEach(idx => {
-            const rev  = idx < 0;
-            const arc  = decodedArcs[rev ? ~idx : idx];
+            const rev     = idx < 0;
+            const arc     = decodedArcs[rev ? ~idx : idx];
             const ordered = rev ? [...arc].reverse() : arc;
             ordered.forEach(([lon, lat]: [number, number]) => pts.push([lon, lat]));
           });
           if (pts.length > 2) rawPaths.push(pts);
         };
 
-        if (geom.type === 'Polygon') geom.arcs.forEach(collectRing);
+        if (geom.type === 'Polygon')      geom.arcs.forEach(collectRing);
         else if (geom.type === 'MultiPolygon') geom.arcs.forEach((p: number[][]) => p.forEach(collectRing));
 
         const paths = rawPaths.map(rp =>
@@ -330,8 +328,8 @@ export function ThreatMap() {
       });
 
       if (hoveredRef.current) {
-        const mx = mouseRef.current.x;
-        const my = mouseRef.current.y;
+        const mx    = mouseRef.current.x;
+        const my    = mouseRef.current.y;
         const label = hoveredRef.current;
         const isAtk = attackedRef.current.has(label);
         const col   = isAtk ? (ATTACK_COLORS[label] || CYAN) : CYAN;
@@ -388,6 +386,7 @@ export function ThreatMap() {
         ctx.stroke();
         ctx.shadowBlur  = 0;
 
+        // Tip dot
         const tf = arc.progress;
         const tx = (1-tf)*(1-tf)*fromP.x + 2*(1-tf)*tf*cpX + tf*tf*toP.x;
         const ty = (1-tf)*(1-tf)*fromP.y + 2*(1-tf)*tf*cpY + tf*tf*toP.y;
@@ -399,6 +398,7 @@ export function ThreatMap() {
         ctx.fill();
         ctx.shadowBlur  = 0;
 
+        // Source dot
         ctx.beginPath();
         ctx.arc(fromP.x, fromP.y, 3, 0, Math.PI * 2);
         ctx.fillStyle   = arc.color;
@@ -410,6 +410,7 @@ export function ThreatMap() {
 
       arcsRef.current = arcsRef.current.filter(a => a.progress < 1.2);
 
+      // YOU marker
       const dp    = project(DEST.lon, DEST.lat, W, H);
       const pulse = 0.5 + 0.5 * Math.sin(t * 4);
       for (let ring = 1; ring <= 3; ring++) {
@@ -485,9 +486,9 @@ export function ThreatMap() {
           )}
           <div style={{ position: 'absolute', bottom: 12, left: 16, display: 'flex', gap: 16, background: 'rgba(0,8,16,0.75)', padding: '6px 12px', border: '1px solid rgba(0,200,180,0.12)' }}>
             {[
-              { color: 'rgba(0,200,160,0.55)', label: 'HOVER',    border: CYAN   },
-              { color: 'rgba(200,50,50,0.45)',  label: 'ATTACKER', border: RED    },
-              { color: CYAN,                    label: 'TARGET',   border: CYAN   },
+              { color: 'rgba(0,200,160,0.55)', label: 'HOVER',    border: CYAN },
+              { color: 'rgba(200,50,50,0.45)',  label: 'ATTACKER', border: RED  },
+              { color: CYAN,                    label: 'TARGET',   border: CYAN },
             ].map(l => (
               <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 10, height: 8, background: l.color, border: `1px solid ${l.border}`, borderRadius: 1 }} />
